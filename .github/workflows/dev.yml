@@ -133,6 +133,12 @@ jobs:
           rustup target list --installed
           echo "Rust target ${{ matrix.target }} installed."
 
+      - name: Disable updater artifacts
+        if: github.event.inputs[matrix.input] == 'true'
+        shell: bash
+        run: |
+          node -e "const fs = require('fs'); const path = 'src-tauri/tauri.conf.json'; const config = JSON.parse(fs.readFileSync(path, 'utf8')); delete config.bundle.createUpdaterArtifacts; fs.writeFileSync(path, JSON.stringify(config, null, 2));"
+
       - name: Tauri build
         if: github.event.inputs[matrix.input] == 'true'
         uses: tauri-apps/tauri-action@v0
