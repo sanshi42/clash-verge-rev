@@ -1,10 +1,12 @@
 import { useEffect } from 'react'
+import type { NavigateFunction } from 'react-router'
 
 import { useListen } from '@/hooks/use-listen'
 import { queryClient } from '@/services/query-client'
 
 export const useLayoutEvents = (
   handleNotice: (payload: [string, string]) => void,
+  navigate: NavigateFunction,
 ) => {
   const { addListener } = useListen()
 
@@ -71,6 +73,14 @@ export const useLayoutEvents = (
       ),
     )
 
+    register(
+      addListener<string>('verge://navigate', ({ payload }) => {
+        if (typeof payload === 'string' && payload.startsWith('/')) {
+          navigate(payload)
+        }
+      }),
+    )
+
     return () => {
       disposed = true
       const errors: Error[] = []
@@ -92,5 +102,5 @@ export const useLayoutEvents = (
 
       unlisteners.length = 0
     }
-  }, [addListener, handleNotice])
+  }, [addListener, handleNotice, navigate])
 }

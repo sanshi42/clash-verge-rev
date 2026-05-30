@@ -45,11 +45,18 @@ tray:
   global: Global
   profiles: Profil
   proxies: Proksi
+  delayTest: Delay Test
   systemProxy: Proksi Sistem
   tunMode: Mode TUN
+  autoLaunch: Launch at Login
+  traySpeed: Show Realtime Speed
+  allowLan: Allow LAN
   closeAllConnections: Tutup Semua Koneksi
   lightweightMode: Mode Ringan
   copyEnv: Salin Variabel Lingkungan
+  connections: Connections
+  config: Config
+  settings: More Settings
   confDir: Direktori Konfigurasi
   coreDir: Direktori Core
   logsDir: Direktori Log

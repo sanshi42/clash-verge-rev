@@ -45,11 +45,18 @@ tray:
   global: عام
   profiles: الملفات التعريفية
   proxies: وكلاء
+  delayTest: Delay Test
   systemProxy: وكيل النظام
   tunMode: وضع TUN
+  autoLaunch: Launch at Login
+  traySpeed: Show Realtime Speed
+  allowLan: Allow LAN
   closeAllConnections: إغلاق كل الاتصالات
   lightweightMode: الوضع الخفيف
   copyEnv: نسخ متغيرات البيئة
+  connections: Connections
+  config: Config
+  settings: More Settings
   confDir: دليل الإعدادات
   coreDir: دليل النواة
   logsDir: دليل السجلات

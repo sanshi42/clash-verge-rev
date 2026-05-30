@@ -233,7 +233,7 @@ const Layout = () => {
     [t, navigate],
   )
 
-  useLayoutEvents(handleNotice)
+  useLayoutEvents(handleNotice, navigate)
 
   useEffect(() => {
     if (language) {

@@ -45,11 +45,18 @@ tray:
   global: Küresel
   profiles: Profiller
   proxies: Vekil'ler
+  delayTest: Delay Test
   systemProxy: Sistem Vekil'i
   tunMode: TUN Modu
+  autoLaunch: Launch at Login
+  traySpeed: Show Realtime Speed
+  allowLan: Allow LAN
   closeAllConnections: Tüm Bağlantıları Kapat
   lightweightMode: Hafif Mod
   copyEnv: Ortam Değişkenlerini Kopyala
+  connections: Connections
+  config: Config
+  settings: More Settings
   confDir: Yapılandırma Dizini
   coreDir: Çekirdek Dizini
   logsDir: Günlük Dizini

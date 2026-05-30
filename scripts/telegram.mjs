@@ -5,7 +5,9 @@ const CHAT_ID_TEST = '@vergetest' // 测试频道
 
 async function sendTelegramNotification() {
   if (!process.env.TELEGRAM_BOT_TOKEN) {
-    console.log('TELEGRAM_BOT_TOKEN is not configured; skipping Telegram notification.')
+    console.log(
+      'TELEGRAM_BOT_TOKEN is not configured; skipping Telegram notification.',
+    )
     return
   }
 

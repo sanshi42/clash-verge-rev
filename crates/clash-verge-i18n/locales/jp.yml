@@ -45,11 +45,18 @@ tray:
   global: グローバル
   profiles: プロファイル
   proxies: プロキシ
+  delayTest: Delay Test
   systemProxy: システムプロキシ
   tunMode: TUN モード
+  autoLaunch: Launch at Login
+  traySpeed: Show Realtime Speed
+  allowLan: Allow LAN
   closeAllConnections: すべての接続を閉じる
   lightweightMode: 軽量モード
   copyEnv: 環境変数をコピー
+  connections: Connections
+  config: Config
+  settings: More Settings
   confDir: 設定ディレクトリ
   coreDir: コアディレクトリ
   logsDir: ログディレクトリ

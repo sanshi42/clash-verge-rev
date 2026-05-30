@@ -45,11 +45,18 @@ tray:
   global: سراسری
   profiles: پروفایل‌ها
   proxies: پروکسی‌ها
+  delayTest: Delay Test
   systemProxy: پروکسی سیستم
   tunMode: حالت TUN
+  autoLaunch: Launch at Login
+  traySpeed: Show Realtime Speed
+  allowLan: Allow LAN
   closeAllConnections: بستن همه اتصال‌ها
   lightweightMode: حالت سبک
   copyEnv: کپی متغیرهای محیطی
+  connections: Connections
+  config: Config
+  settings: More Settings
   confDir: پوشه پیکربندی
   coreDir: پوشه هسته
   logsDir: پوشه گزارش‌ها

@@ -45,11 +45,18 @@ tray:
   global: Глобальный
   profiles: Профили
   proxies: Прокси
+  delayTest: Delay Test
   systemProxy: Системный прокси
   tunMode: Режим TUN
+  autoLaunch: Launch at Login
+  traySpeed: Show Realtime Speed
+  allowLan: Allow LAN
   closeAllConnections: Закрыть все соединения
   lightweightMode: Легкий режим
   copyEnv: Копировать переменные среды
+  connections: Connections
+  config: Config
+  settings: More Settings
   confDir: Каталог конфигурации
   coreDir: Каталог ядра
   logsDir: Каталог журналов

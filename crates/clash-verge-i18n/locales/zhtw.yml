@@ -45,11 +45,18 @@ tray:
   global: 全域
   profiles: 訂閱
   proxies: 代理
+  delayTest: 延遲測速
   systemProxy: 系統代理
   tunMode: 虛擬網路介面卡模式
+  autoLaunch: 開機啟動
+  traySpeed: 顯示即時速率
+  allowLan: 允許區域網路連線
   closeAllConnections: 關閉所有連線
   lightweightMode: 輕量模式
   copyEnv: 複製環境變數
+  connections: 連線檢視器
+  config: 配置
+  settings: 更多設定
   confDir: 設定目錄
   coreDir: 核心目錄
   logsDir: 日誌目錄

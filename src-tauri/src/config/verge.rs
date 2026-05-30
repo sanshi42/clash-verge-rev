@@ -365,6 +365,15 @@ impl IVerge {
                     {
                         config.start_page = Some(String::from("/"));
                     }
+
+                    #[cfg(target_os = "macos")]
+                    if config.migrate_macos_clashx_tray_defaults() {
+                        logging!(info, Type::Config, "已将 macOS 托盘菜单旧默认值迁移为 ClashX 风格");
+                        if let Err(err) = help::save_yaml(&path, &config, Some("# Clash Verge Config")).await {
+                            logging!(warn, Type::Config, "保存 macOS 托盘菜单迁移配置失败: {err}");
+                        }
+                    }
+
                     config
                 }
                 Err(err) => {
@@ -386,6 +395,10 @@ impl IVerge {
             clash_core: Some("verge-mihomo".into()),
             language: Some(clash_verge_i18n::system_language().into()),
             theme_mode: Some("system".into()),
+            #[cfg(target_os = "macos")]
+            tray_event: Some("tray_menu".into()),
+            #[cfg(not(target_os = "macos"))]
+            tray_event: None,
             #[cfg(not(target_os = "windows"))]
             env_type: Some("bash".into()),
             #[cfg(target_os = "windows")]
@@ -441,7 +454,13 @@ impl IVerge {
             #[cfg(target_os = "macos")]
             enable_tray_speed: Some(false),
             // enable_tray_icon: Some(true),
+            #[cfg(target_os = "macos")]
+            tray_proxy_groups_display_mode: Some("inline".into()),
+            #[cfg(not(target_os = "macos"))]
             tray_proxy_groups_display_mode: Some("default".into()),
+            #[cfg(target_os = "macos")]
+            tray_inline_outbound_modes: Some(true),
+            #[cfg(not(target_os = "macos"))]
             tray_inline_outbound_modes: Some(false),
             enable_global_hotkey: Some(true),
             enable_auto_light_weight_mode: Some(false),
@@ -451,6 +470,30 @@ impl IVerge {
             enable_external_controller: Some(false),
             ..Self::default()
         }
+    }
+
+    #[cfg(target_os = "macos")]
+    fn migrate_macos_clashx_tray_defaults(&mut self) -> bool {
+        let tray_event_changed = self.tray_event.as_deref().is_none_or(|value| value == "main_window");
+        let proxy_groups_changed = self
+            .tray_proxy_groups_display_mode
+            .as_deref()
+            .is_none_or(|value| value == "default");
+        let outbound_modes_changed = self.tray_inline_outbound_modes != Some(true);
+
+        if tray_event_changed {
+            self.tray_event = Some("tray_menu".into());
+        }
+
+        if proxy_groups_changed {
+            self.tray_proxy_groups_display_mode = Some("inline".into());
+        }
+
+        if outbound_modes_changed {
+            self.tray_inline_outbound_modes = Some(true);
+        }
+
+        tray_event_changed || proxy_groups_changed || outbound_modes_changed
     }
 
     /// Save IVerge App Config

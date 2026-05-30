@@ -45,11 +45,18 @@ tray:
   global: 全局
   profiles: 订阅
   proxies: 代理
+  delayTest: 延迟测速
   systemProxy: 系统代理
   tunMode: TUN 模式
+  autoLaunch: 开机启动
+  traySpeed: 显示实时速率
+  allowLan: 允许局域网连接
   closeAllConnections: 关闭所有连接
   lightweightMode: 轻量模式
   copyEnv: 复制环境变量
+  connections: 连接查看器
+  config: 配置
+  settings: 更多设置
   confDir: 配置目录
   coreDir: 内核目录
   logsDir: 日志目录

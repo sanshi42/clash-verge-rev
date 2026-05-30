@@ -45,11 +45,18 @@ tray:
   global: Global
   profiles: Perfiles
   proxies: Proxies
+  delayTest: Delay Test
   systemProxy: Proxy del sistema
   tunMode: Modo TUN
+  autoLaunch: Launch at Login
+  traySpeed: Show Realtime Speed
+  allowLan: Allow LAN
   closeAllConnections: Cerrar todas las conexiones
   lightweightMode: Modo ligero
   copyEnv: Copiar variables de entorno
+  connections: Connections
+  config: Config
+  settings: More Settings
   confDir: Directorio de configuración
   coreDir: Directorio del núcleo
   logsDir: Directorio de registros
