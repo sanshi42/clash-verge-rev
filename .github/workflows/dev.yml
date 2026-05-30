@@ -159,14 +159,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          APP_PATH="target/${{ matrix.target }}/release/bundle/macos/Clash Verge.app"
+          APP_PATH="src-tauri/target/${{ matrix.target }}/release/bundle/macos/Clash Verge.app"
           codesign --force --deep --sign - "$APP_PATH"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
           TARGET="${{ matrix.target }}"
           ARCH="${TARGET%-apple-darwin}"
           VERSION=$(node -p "require('./package.json').version")
-          DMG_DIR="target/${TARGET}/release/bundle/dmg"
+          DMG_DIR="src-tauri/target/${TARGET}/release/bundle/dmg"
           rm -f "${DMG_DIR}"/*.dmg
           mkdir -p "$DMG_DIR"
           hdiutil create -fs HFS+ \
@@ -180,7 +180,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           archive: false
-          path: target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+          path: src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
           if-no-files-found: error
 
       - name: Upload Artifacts (Windows)
