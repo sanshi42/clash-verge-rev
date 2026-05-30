@@ -1,16 +1,15 @@
 import { readFileSync } from 'fs'
 
-import axios from 'axios'
-
-import { log_error, log_info, log_success } from './utils.mjs'
-
 const CHAT_ID_RELEASE = '@clash_verge_re' // 正式发布频道
 const CHAT_ID_TEST = '@vergetest' // 测试频道
 
 async function sendTelegramNotification() {
   if (!process.env.TELEGRAM_BOT_TOKEN) {
-    throw new Error('TELEGRAM_BOT_TOKEN is required')
+    console.log('TELEGRAM_BOT_TOKEN is not configured; skipping Telegram notification.')
+    return
   }
+
+  const { log_error, log_info, log_success } = await import('./utils.mjs')
 
   const version =
     process.env.VERSION ||
@@ -116,6 +115,7 @@ async function sendTelegramNotification() {
 
   // 发送到 Telegram
   try {
+    const { default: axios } = await import('axios')
     await axios.post(
       `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
       {
@@ -142,6 +142,6 @@ async function sendTelegramNotification() {
 
 // 执行函数
 sendTelegramNotification().catch((error) => {
-  log_error('脚本执行失败:', error)
+  console.error('脚本执行失败:', error)
   process.exit(1)
 })
