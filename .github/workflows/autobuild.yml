@@ -243,14 +243,23 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          APP_PATH="src-tauri/target/${{ matrix.target }}/release/bundle/macos/Clash Verge.app"
+          TARGET="${{ matrix.target }}"
+
+          for BASE in "src-tauri/target" "target"; do
+            CANDIDATE="${BASE}/${TARGET}/release/bundle/macos/Clash Verge.app"
+            if [ -d "$CANDIDATE" ]; then
+              APP_PATH="$CANDIDATE"
+              DMG_DIR="${BASE}/${TARGET}/release/bundle/dmg"
+              break
+            fi
+          done
+
+          echo "APP_PATH=${APP_PATH:?App bundle not found}"
           codesign --force --deep --sign - "$APP_PATH"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
-          TARGET="${{ matrix.target }}"
           ARCH="${TARGET%-apple-darwin}"
           VERSION=$(node -p "require('./package.json').version")
-          DMG_DIR="src-tauri/target/${TARGET}/release/bundle/dmg"
           DMG_NAME="Clash Verge_${VERSION}_${ARCH}.dmg"
           DMG_PATH="${DMG_DIR}/${DMG_NAME}"
 
