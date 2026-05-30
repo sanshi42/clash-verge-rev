@@ -238,6 +238,39 @@ jobs:
           args: --target ${{ matrix.target }}
           # includeUpdaterJson: true
 
+      - name: Re-sign macOS .app and replace DMG
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_PATH="src-tauri/target/${{ matrix.target }}/release/bundle/macos/Clash Verge.app"
+          codesign --force --deep --sign - "$APP_PATH"
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+
+          TARGET="${{ matrix.target }}"
+          ARCH="${TARGET%-apple-darwin}"
+          VERSION=$(node -p "require('./package.json').version")
+          DMG_DIR="src-tauri/target/${TARGET}/release/bundle/dmg"
+          DMG_NAME="Clash Verge_${VERSION}_${ARCH}.dmg"
+          DMG_PATH="${DMG_DIR}/${DMG_NAME}"
+
+          rm -f "${DMG_DIR}"/*.dmg
+          mkdir -p "$DMG_DIR"
+
+          hdiutil create -fs HFS+ \
+            -srcfolder "$APP_PATH" \
+            -volname "Clash Verge" \
+            -format UDZO \
+            "$DMG_PATH"
+
+          OLD_URL=$(gh release view "${{ env.TAG_NAME }}" --json assets -q '.assets[] | select(.name | endswith(".dmg")) | select(.name | contains("'"$ARCH"'")) | .url')
+          if [ -n "$OLD_URL" ]; then
+            gh api -X DELETE "$OLD_URL"
+          fi
+          gh release upload "${{ env.TAG_NAME }}" "$DMG_PATH" --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   autobuild-arm-linux:
     name: Autobuild ARM Linux
     needs: [check_commit, update_tag]
