@@ -1,6 +1,6 @@
 use crate::{
     config::{Config, IVerge},
-    core::handle,
+    core::{handle, sysopt},
 };
 use clash_verge_logging::{Type, logging};
 use std::env;
@@ -9,8 +9,16 @@ use tauri_plugin_clipboard_manager::ClipboardExt as _;
 /// Toggle system proxy on/off
 pub async fn toggle_system_proxy() -> bool {
     let verge = Config::verge().await;
-    let current = verge.latest_arc().enable_system_proxy.unwrap_or(false);
+    let config_enabled = verge.latest_arc().enable_system_proxy.unwrap_or(false);
     let auto_close_connection = verge.latest_arc().auto_close_connection.unwrap_or(false);
+    let effective_enabled = match sysopt::Sysopt::global().system_proxy_enabled().await {
+        Ok(enabled) => Some(enabled),
+        Err(err) => {
+            logging!(warn, Type::ProxyMode, "Failed to read system proxy state: {err}");
+            None
+        }
+    };
+    let current = effective_enabled.unwrap_or(config_enabled);
 
     // 如果当前系统代理即将关闭，且自动关闭连接设置为true，则关闭所有连接
     if current
@@ -20,7 +28,7 @@ pub async fn toggle_system_proxy() -> bool {
         logging!(error, Type::ProxyMode, "Failed to close all connections: {err}");
     }
 
-    let requested = !current;
+    let requested = sysopt::system_proxy_toggle_target(config_enabled, effective_enabled);
     let patch_result = super::patch_verge(
         &IVerge {
             enable_system_proxy: Some(requested),

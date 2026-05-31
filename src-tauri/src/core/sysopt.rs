@@ -33,6 +33,45 @@ const fn proxy_apply_steps(sys_enabled: bool, auto_enabled: bool) -> [ProxyApply
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ExpectedSystemProxy {
+    proxy_auto_config: bool,
+    host: std::string::String,
+    port: u16,
+    pac_url: std::string::String,
+}
+
+impl ExpectedSystemProxy {
+    fn from_verge(verge: &IVerge, fallback_mixed_port: u16) -> Self {
+        let host = verge.proxy_host.as_deref().unwrap_or("127.0.0.1").to_owned();
+        let port = verge.verge_mixed_port.unwrap_or(fallback_mixed_port);
+        let pac_url = expected_pac_url(&host);
+
+        Self {
+            proxy_auto_config: verge.proxy_auto_config.unwrap_or_default(),
+            host,
+            port,
+            pac_url,
+        }
+    }
+}
+
+fn expected_pac_url(proxy_host: &str) -> std::string::String {
+    format!("http://{}:{}/commands/pac", proxy_host, IVerge::get_singleton_port())
+}
+
+fn sysproxy_matches(sys_proxy: &Sysproxy, expected_host: &str, expected_port: u16) -> bool {
+    sys_proxy.enable && sys_proxy.host == expected_host && sys_proxy.port == expected_port
+}
+
+fn autoproxy_matches(auto_proxy: &Autoproxy, expected_url: &str) -> bool {
+    auto_proxy.enable && auto_proxy.url == expected_url
+}
+
+pub(crate) fn system_proxy_toggle_target(config_enabled: bool, effective_enabled: Option<bool>) -> bool {
+    !effective_enabled.unwrap_or(config_enabled)
+}
+
 pub struct Sysopt {
     update_lock: TokioMutex<()>,
     reset_sysproxy: AtomicBool,
@@ -122,6 +161,29 @@ impl Sysopt {
     /// disabled but HTTP still enabled mid-transition).
     pub async fn wait_idle(&self) {
         let _ = self.update_lock.lock().await;
+    }
+
+    async fn expected_system_proxy(&self) -> ExpectedSystemProxy {
+        let verge = Config::verge().await.latest_arc();
+        let fallback_mixed_port = match verge.verge_mixed_port {
+            Some(port) => port,
+            None => Config::clash().await.latest_arc().get_mixed_port(),
+        };
+
+        ExpectedSystemProxy::from_verge(&verge, fallback_mixed_port)
+    }
+
+    pub async fn system_proxy_enabled(&self) -> Result<bool> {
+        self.wait_idle().await;
+
+        let expected = self.expected_system_proxy().await;
+        if expected.proxy_auto_config {
+            let auto_proxy = Autoproxy::get_auto_proxy()?;
+            Ok(autoproxy_matches(&auto_proxy, &expected.pac_url))
+        } else {
+            let sys_proxy = Sysproxy::get_system_proxy()?;
+            Ok(sysproxy_matches(&sys_proxy, &expected.host, expected.port))
+        }
     }
 
     /// init the sysproxy
@@ -233,7 +295,10 @@ impl Sysopt {
 
 #[cfg(test)]
 mod tests {
-    use super::{ProxyApplyStep, proxy_apply_steps};
+    use super::{
+        Autoproxy, IVerge, ProxyApplyStep, Sysproxy, autoproxy_matches, expected_pac_url, proxy_apply_steps,
+        sysproxy_matches, system_proxy_toggle_target,
+    };
 
     #[test]
     fn pure_sysproxy_mode_clears_pac_before_enabling_global_proxy() {
@@ -257,5 +322,65 @@ mod tests {
             proxy_apply_steps(false, false),
             [ProxyApplyStep::Sysproxy, ProxyApplyStep::Autoproxy]
         );
+    }
+
+    #[test]
+    fn sysproxy_match_requires_enabled_app_endpoint() {
+        let sys_proxy = Sysproxy {
+            host: "127.0.0.1".into(),
+            bypass: String::new(),
+            port: 7897,
+            enable: true,
+        };
+
+        assert!(sysproxy_matches(&sys_proxy, "127.0.0.1", 7897));
+        assert!(!sysproxy_matches(&sys_proxy, "127.0.0.1", 7890));
+
+        let disabled = Sysproxy {
+            enable: false,
+            ..sys_proxy
+        };
+        assert!(!sysproxy_matches(&disabled, "127.0.0.1", 7897));
+    }
+
+    #[test]
+    fn autoproxy_match_requires_enabled_app_pac_url() {
+        let expected_url = expected_pac_url("127.0.0.1");
+        let auto_proxy = Autoproxy {
+            url: expected_url.clone(),
+            enable: true,
+        };
+
+        assert!(autoproxy_matches(&auto_proxy, &expected_url));
+        assert!(!autoproxy_matches(&auto_proxy, "http://127.0.0.1:12345/commands/pac"));
+
+        let disabled = Autoproxy {
+            enable: false,
+            ..auto_proxy
+        };
+        assert!(!autoproxy_matches(&disabled, &expected_url));
+    }
+
+    #[test]
+    fn expected_system_proxy_uses_verge_settings() {
+        let verge = IVerge {
+            proxy_auto_config: Some(true),
+            proxy_host: Some("0.0.0.0".into()),
+            verge_mixed_port: Some(9090),
+            ..IVerge::default()
+        };
+        let expected = super::ExpectedSystemProxy::from_verge(&verge, 7897);
+
+        assert!(expected.proxy_auto_config);
+        assert_eq!(expected.host, "0.0.0.0");
+        assert_eq!(expected.port, 9090);
+        assert_eq!(expected.pac_url, expected_pac_url("0.0.0.0"));
+    }
+
+    #[test]
+    fn toggle_target_uses_effective_state_before_config_state() {
+        assert!(system_proxy_toggle_target(true, Some(false)));
+        assert!(!system_proxy_toggle_target(false, Some(true)));
+        assert!(!system_proxy_toggle_target(true, None));
     }
 }

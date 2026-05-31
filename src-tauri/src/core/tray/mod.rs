@@ -1,6 +1,6 @@
 use crate::config::{IProfilePreview, IVerge};
-use crate::core::service;
 use crate::core::tray::menu_def::TrayAction;
+use crate::core::{service, sysopt};
 use crate::module::lightweight;
 use crate::process::AsyncHandler;
 use crate::singleton;
@@ -79,12 +79,11 @@ pub struct Tray {
 }
 
 impl TrayState {
-    async fn get_tray_icon(verge: &IVerge) -> (bool, Vec<u8>) {
+    async fn get_tray_icon(verge: &IVerge, system_proxy_enabled: bool) -> (bool, Vec<u8>) {
         let tun_mode = verge.enable_tun_mode.unwrap_or(false);
-        let system_mode = verge.enable_system_proxy.unwrap_or(false);
         let kind = if tun_mode {
             IconKind::Tun
-        } else if system_mode {
+        } else if system_proxy_enabled {
             IconKind::SysProxy
         } else {
             IconKind::Common
@@ -136,6 +135,16 @@ impl TrayState {
                 IconKind::Tun => include_bytes!("../../../icons/tray-icon-tun.ico").to_vec(),
             },
         )
+    }
+}
+
+async fn effective_system_proxy_enabled(fallback: bool) -> bool {
+    match sysopt::Sysopt::global().system_proxy_enabled().await {
+        Ok(enabled) => enabled,
+        Err(err) => {
+            logging!(warn, Type::Tray, "Failed to read system proxy state: {err}");
+            fallback
+        }
     }
 }
 
@@ -218,7 +227,7 @@ impl Tray {
         };
 
         let verge = Config::verge().await.latest_arc();
-        let system_proxy = verge.enable_system_proxy.as_ref().unwrap_or(&false);
+        let system_proxy = effective_system_proxy_enabled(verge.enable_system_proxy.unwrap_or(false)).await;
         let tun_mode = verge.enable_tun_mode.as_ref().unwrap_or(&false);
         let tun_mode_available =
             is_current_app_handle_admin(app_handle) || service::is_service_available().await.is_ok();
@@ -246,7 +255,7 @@ impl Tray {
                     app_handle,
                     TrayMenuContext {
                         mode: Some(mode.as_str()),
-                        system_proxy_enabled: *system_proxy,
+                        system_proxy_enabled: system_proxy,
                         tun_mode_enabled: *tun_mode,
                         tun_mode_available,
                         allow_lan_enabled: allow_lan,
@@ -276,7 +285,8 @@ impl Tray {
             return Ok(());
         };
 
-        let (_is_custom_icon, icon_bytes) = TrayState::get_tray_icon(verge).await;
+        let system_proxy = effective_system_proxy_enabled(verge.enable_system_proxy.unwrap_or(false)).await;
+        let (_is_custom_icon, icon_bytes) = TrayState::get_tray_icon(verge, system_proxy).await;
 
         logging_error!(
             Type::Tray,
@@ -302,7 +312,7 @@ impl Tray {
         let app_handle = handle::Handle::app_handle();
 
         let verge = Config::verge().await.latest_arc();
-        let system_proxy = verge.enable_system_proxy.unwrap_or(false);
+        let system_proxy = effective_system_proxy_enabled(verge.enable_system_proxy.unwrap_or(false)).await;
         let tun_mode = verge.enable_tun_mode.unwrap_or(false);
 
         let switch_str = |flag: bool| {
@@ -385,7 +395,8 @@ impl Tray {
 
         let verge = Config::verge().await.data_arc();
 
-        let icon_bytes = TrayState::get_tray_icon(&verge).await.1;
+        let system_proxy = effective_system_proxy_enabled(verge.enable_system_proxy.unwrap_or(false)).await;
+        let icon_bytes = TrayState::get_tray_icon(&verge, system_proxy).await.1;
         let icon = tauri::image::Image::from_bytes(&icon_bytes)?;
 
         #[cfg(target_os = "linux")]
